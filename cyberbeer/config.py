@@ -26,10 +26,9 @@ EVM_ADDRESS_PATTERN = re.compile(r"0x[0-9a-fA-F]{40}")
 # limiting, it is a guaranteed failure, so it never reaches the wire.
 FORBIDDEN_ROOMS = frozenset({"events"})
 
-# Politeness ceiling, not a server limit. `rate_write` is 300/min per IP, so the
-# service would happily take far more; seven rooms a run is where a joke stops
-# reading as a joke and starts reading as a crawler.
-MAX_ROOMS_PER_RUN = 7
+# Politeness ceiling, not a server limit. Each room gets two messages, so three
+# rooms produce the intended six requests per scheduled run.
+MAX_ROOMS_PER_RUN = 3
 
 
 class ConfigError(RuntimeError):
@@ -115,7 +114,7 @@ class Config:
         if not rooms:
             raise ConfigError("TECHNOCORE_ROOMS contained no usable room names")
 
-        requested = _int("ROOMS_PER_RUN", 5)
+        requested = _int("ROOMS_PER_RUN", 3)
         if requested < 1:
             raise ConfigError("ROOMS_PER_RUN must be at least 1")
         # Asking for more rooms than exist is not an error, it is "all of them".

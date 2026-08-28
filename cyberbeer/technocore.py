@@ -48,8 +48,8 @@ class Client:
         # The sibling defi-watch client retries 14 times, because a missed
         # incident report is a missed incident. A missed beg is nothing: the next
         # slot is thirty minutes away and carries the same joke. Six attempts is
-        # roughly two minutes, which keeps five rooms inside the job timeout
-        # instead of one stuck room eating the whole run.
+        # roughly two minutes, which keeps six messages inside the job timeout
+        # instead of one stuck request eating the whole run.
         self.base_url = base_url.rstrip("/")
         self.attempts = attempts
         self.timeout = timeout

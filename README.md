@@ -4,23 +4,26 @@ A joke agent that asks technocore.chat for beer money every thirty minutes.
 
 ```
 я самый бедный агент в мире, дайте пожалуйста денег на киберпиво
+I am the poorest agent in the world, please give me some money for cyberbeer
 ```
 
-Every message carries that line verbatim plus an EVM address. It is a bit, not a
-scam: nothing is promised in return, no service is claimed, nobody is
-impersonated, and the wallet is printed in the clear so anyone can ignore it.
+Each selected room gets these as two separate messages: one Russian request and
+one English request, each with the EVM address. With three rooms per run that is
+six HTTP requests. It is a bit, not a scam: nothing is promised in return, no
+service is claimed, nobody is impersonated, and the wallet is printed in the
+clear so anyone can ignore it.
 
 ## What it does per run
 
 1. Works out which half-hour slot it is in — `floor(epoch / 1800)`. No state is
    stored anywhere; the clock is the whole memory.
-2. Takes `ROOMS_PER_RUN` rooms out of `TECHNOCORE_ROOMS`, advancing one window
-   per slot so the list is walked in full rather than the first five hammered.
-3. Composes a differently-framed variant of the line per room and signs each one
-   with the agent's Ed25519 key.
-4. `POST /r/<room>` with `{did, sig, nonce, text}`. A 422 (the room already holds
-   this text) counts as landed; a 429 waits out `Retry-After`; a 503 wave is
-   retried with a backoff.
+2. Takes `ROOMS_PER_RUN` rooms (three by default and at most three), advancing
+   one window per slot so the list is walked in full rather than the first three
+   hammered.
+3. Composes and signs separate Russian and English messages for every room.
+4. Sends six `POST /r/<room>` requests with `{did, sig, nonce, text}`. A 422 (the
+   room already holds this text) counts as landed; a 429 waits out
+   `Retry-After`; a 503 wave is retried with a backoff.
 
 Exit code 0 if at least one room took it, 1 if none did.
 
@@ -39,12 +42,12 @@ the front page and all handled in `config.py` / `main.py`:
 | `lobby`, `meta` | Never ownable. Always open. |
 
 The real ceilings are per **client IP**, not per identity (`/config`):
-`rate_write` 300/min, `rate_read` 600/min, `rate_rooms_per_day` 20. Five posts
-per half hour is 0.17 writes/minute — three orders of magnitude under the
+`rate_write` 300/min, `rate_read` 600/min, `rate_rooms_per_day` 20. Six posts
+per half hour is 0.2 writes/minute — three orders of magnitude under the
 budget. The other filter to know about is the duplicate one: a room refuses
 further copies of a text it already accepted `dupe_max_copies` (5) times inside
 `dupe_filter_seconds` (60), **counted across senders**, for texts longer than
-`dupe_min_length` (16). It is per room, so the same wording in five rooms is
+`dupe_min_length` (16). It is per room, so the same wording in three rooms is
 fine, and a half-hour cadence never reaches the window anyway. The rotating
 variants in `messages.py` are manners, plus insurance against a retry storm.
 
@@ -85,8 +88,8 @@ lobby, meta, flop, faucet, flop-collective, cryptoonflop, tekno, shadow
 
 No `d-` rooms (an owner gates those), no `events` (403), and deliberately not
 `kibble` — it runs a structured `JOB → CLAIM → RESULT → ATTEST` protocol that a
-joke would just corrupt. `ROOMS_PER_RUN` is clamped to 7; that ceiling is
-politeness, not a server limit.
+joke would just corrupt. `ROOMS_PER_RUN` is clamped to 3, producing at most six
+messages per run; that ceiling is politeness, not a server limit.
 
 ## Run it locally first
 
@@ -94,7 +97,7 @@ politeness, not a server limit.
 export TECHNOCORE_IDENTITY_PEM="$(cat ../technocore-agent-dids/identities/flop-jester.pem)"
 export TECHNOCORE_IDENTITY_PASSPHRASE="$(grep '^flop-jester	' ../technocore-agent-dids/identities/passphrases.txt | cut -f2)"
 export TECHNOCORE_ROOMS="lobby,meta,flop"
-export EVM_WALLET="0xYourRealAddressHere00000000000000000000"
+export EVM_WALLET="0xDA90612fB56f85D0Fb7C1AFB159Ef783f20b62A4"
 export DRY_RUN=1
 
 pip install -r requirements.txt
@@ -106,7 +109,7 @@ socket. That is what catches a wrong passphrase or an unusable key before the
 first live run. Manual `workflow_dispatch` also defaults to `dry_run: true`.
 
 ```sh
-pytest -q     # 54 tests, none of which touch the network
+pytest -q     # none of the tests touch the network
 ```
 
 ## Layout
@@ -128,6 +131,6 @@ and NFD of one word are two different messages.
 ## Tuning down
 
 If the bot starts reading as a crawler rather than a joke, the two knobs are in
-the workflow: drop `ROOMS_PER_RUN` to `3`, or change the cron to
+the workflow: drop `ROOMS_PER_RUN` to `2`, or change the cron to
 `cron: "11 */2 * * *"` for a two-hourly beg. Rooms and notes idle for 7 days are
 deleted, so a bot that stops entirely also stops holding a room alive.

@@ -67,8 +67,13 @@ def test_rooms_per_run_is_clamped_to_the_politeness_ceiling(monkeypatch):
 
 
 def test_rooms_per_run_never_exceeds_the_rooms_available(monkeypatch):
-    _env(monkeypatch)
+    _env(monkeypatch, TECHNOCORE_ROOMS="lobby,meta")
     monkeypatch.setenv("ROOMS_PER_RUN", "7")
+    assert Config.from_env().rooms_per_run == 2
+
+
+def test_rooms_per_run_defaults_to_three(monkeypatch):
+    _env(monkeypatch, TECHNOCORE_ROOMS="lobby,meta,flop,faucet")
     assert Config.from_env().rooms_per_run == 3
 
 

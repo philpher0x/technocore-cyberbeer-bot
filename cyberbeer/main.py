@@ -1,8 +1,7 @@
-"""One run: sign the beggar's line once per room and post it.
+"""One run: sign and post separate Russian and English requests per room.
 
-Exit code is 0 when at least one room took the message, 1 when none did. A run
-that lands three of five is a success — rooms come and go, an owner can gate a
-`d-` room between runs, and the next half-hour brings another try.
+Exit code is 0 when at least one message landed, 1 when none did. A partial run
+is a success — rooms come and go, and the next half-hour brings another try.
 """
 
 from __future__ import annotations
@@ -46,7 +45,10 @@ def run() -> int:
     schedule = plan(config.rooms, config.rooms_per_run, config.wallet, slot)
 
     print(f"did   {identity.did}")
-    print(f"slot  {slot} ({len(schedule)} of {len(config.rooms)} rooms this run)")
+    print(
+        f"slot  {slot} ({len(schedule) // 2} of {len(config.rooms)} rooms, "
+        f"{len(schedule)} messages this run)"
+    )
     print(f"mode  {'DRY RUN — nothing is sent' if config.dry_run else 'live'}")
     print()
 
@@ -74,7 +76,7 @@ def run() -> int:
     if config.dry_run:
         print(f"dry run complete: {len(schedule)} messages signed, 0 sent")
         return 0
-    print(f"{landed} of {len(schedule)} rooms took the message")
+    print(f"{landed} of {len(schedule)} messages landed")
     return 0 if landed else 1
 
 
