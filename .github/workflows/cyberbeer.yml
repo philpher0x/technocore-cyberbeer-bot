@@ -56,11 +56,11 @@ jobs:
           # --- public settings: Actions > Variables, or edit them right here ---
           # The wallet is printed in every message, so it is a variable and not a
           # secret. A secret would be redacted out of the run log for no benefit.
-          EVM_WALLET: ${{ vars.EVM_WALLET }}
+          EVM_WALLET: ${{ secrets.EVM_WALLET }}
           # The DID this PEM must derive. Optional, but it turns "wrong key in the
           # secret" from a run that quietly posts as the wrong agent into a
           # config error before anything is sent.
-          TECHNOCORE_DID: ${{ vars.TECHNOCORE_DID }}
+          TECHNOCORE_DID: ${{ secrets.TECHNOCORE_DID }}
 
           # Open, world-writable rooms. No `d-` rooms (an owner gates those), no
           # `events` (server-written, 403 for everyone), no `kibble` (it runs a
